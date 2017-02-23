@@ -16,6 +16,7 @@ class Request
         estimate: 'fields/timeTracking/originalEstimate',
         remaining: 'fields/timeTracking/remainingEstimate'
     }
+    self.data = {}
   end
 
   def to_json
@@ -37,13 +38,13 @@ class Request
 
   def method_missing(name, *args, &block)
     if self.data_map.key?(name)
-      self._set_xpath(self.data, self.data_map[name], value)
+      self._set_xpath(self.data, self.data_map[name], *args[0])
     else
-      raise Exception.new 'Invalid request parameter: ' + name
+      raise Exception.new 'Invalid request parameter: ' + name.to_s
     end
   end
 
   def to_s
-    self.data.to_s
+    self.data
   end
 end
