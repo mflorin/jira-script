@@ -2,10 +2,11 @@ require 'json'
 
 class Request
 
-  attr_accessor :config, :data, :data_map
+  attr_accessor :config, :data, :fields, :data_map
 
   def initialize(config = {})
     self.config = config
+    self.fields = {}
     self.data_map = {
         project: 'fields/project/key',
         parent: 'fields/parent/key',
@@ -38,6 +39,7 @@ class Request
 
   def method_missing(name, *args, &block)
     if self.data_map.key?(name)
+      self.fields[name] = *args[0]
       self._set_xpath(self.data, self.data_map[name], *args[0])
     else
       raise Exception.new 'Invalid request parameter: ' + name.to_s

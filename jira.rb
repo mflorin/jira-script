@@ -7,7 +7,9 @@ class Jira
 
   def initialize
     self.config = {
-        api_path: 'rest/api/2'
+        api_path: 'rest/api/2',
+        default_type: 'Story',
+        default_subtask_type: 'Technical task'
     }
     self.request_queue = RequestQueue.new
   end
@@ -55,6 +57,7 @@ class Jira
   def _show_result(response, tag, success_msg)
     if response.success?
       p "[#{tag}] #{success_msg}"
+      p response.body
     elsif response.timed_out?
       p "[#{tag}] timeout"
     elsif response.code == 0
@@ -67,8 +70,13 @@ class Jira
 
   # update command
   def update(key, &block)
-    request_config = self._get_request_config('issue/' + key, :put)
+
     raise Exception.new 'cannot start a new command inside another' unless self.request.nil?
+    raise Exception.new 'no update definition' unless block_given?
+
+    ret = nil
+    request_config = self._get_request_config('issue/' + key, :put)
+
     self.request = Request.new(request_config)
     self.instance_eval(&block)
     response = self.request_queue.add(self.request)
@@ -77,16 +85,39 @@ class Jira
   end
 
   def create(summary, &block)
-    request_config = self._get_request_config('issue', :post)
+
     raise Exception.new 'cannot start a new command inside another' unless self.request.nil?
+
+    # create new request
+    request_config = self._get_request_config('issue', :post)
     self.request = Request.new(request_config)
     self.request.summary summary
     self.request.project self.config[:project]
-    self.instance_eval(&block)
+
+    self.instance_eval(&block) if block_given?
+
+    # set default type if empty
+    if !self.request.fields.key?(:type)
+      if self.request.fields.key?(:parent)
+        self.request.type self.config[:default_subtask_type]
+      else
+        self.request.type self.config[:default_type]
+      end
+    end
+
+    # run request
     response = self.request_queue.add(self.request)
+    if response.success?
+      resp = JSON.parse(response.body)
+      ret = resp['key'] if resp.key?('key')
+    end
+
     self._show_result(response, summary, 'created successfully')
-    p self.request.to_s
+
     self.request = nil
+
+    ret
+
   end
 
   def method_missing(name, *args, &block)
