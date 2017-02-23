@@ -1,19 +1,21 @@
 require 'request'
-#require 'request_queue'
+require 'request_queue'
 
 class Jira
 
   attr_accessor :config, :request_queue, :request
 
   def initialize
-    self.config = {}
-  #  self.request_queue = RequestQueue.new
+    self.config = {
+        api_path: 'rest/api/2'
+    }
+    self.request_queue = RequestQueue.new
   end
 
   def self.run(&block)
     j = Jira.new
     Jira.new.instance_eval(&block)
-   # j.request_queue.run
+    j.request_queue.run
   end
 
   # config related methods
@@ -37,21 +39,50 @@ class Jira
     self.config[:project] = p
   end
 
-
-  # update command
-  def update(key, &block)
-    request_config = {
+  # build request config
+  def _get_request_config(res, type)
+    {
         user: self.config[:user],
         password: self.config[:password],
         host: self.config[:host],
         api_path: self.config[:api_path],
         project: self.config[:project],
-        resource: 'issue/' + key
+        request_type: type,
+        resource: resource
     }
-    self.request = Request.new request_config
+  end
+
+  def _show_result(response, tag)
+    if response.success?
+      p "[#{tag}] update successful"
+    elsif response.timed_out?
+      p "[#{tag}] timeout"
+    elsif response.code == 0
+      p "[#{tag}] #{response.return_message}"
+    else
+      p "[#{tag}] request failed: #{response.code.to_s}"
+      p response.body
+    end
+  end
+
+  # update command
+  def update(key, &block)
+    request_config = self._get_request_config('issue/' + key, :put)
+
+    self.request = Request.new(request_config)
     self.instance_eval(&block)
-    #self.request_queue.add(self.request)
-    p self.request.to_s
+    response = self.request_queue.add(self.request)
+    self._show_result(response, key)
+    self.request = nil
+  end
+
+  def create(summary, &block)
+    request_config = self._get_request_config('issue', :post)
+    self.request = Request.new(request_config)
+    self.request.summary summary
+    self.instance_eval(&block)
+    response = self.request_queue.add(self.request)
+    self._show_result(response, summary)
     self.request = nil
   end
 
