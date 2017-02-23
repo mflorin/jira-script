@@ -48,13 +48,13 @@ class Jira
         api_path: self.config[:api_path],
         project: self.config[:project],
         request_type: type,
-        resource: resource
+        resource: res
     }
   end
 
-  def _show_result(response, tag)
+  def _show_result(response, tag, success_msg)
     if response.success?
-      p "[#{tag}] update successful"
+      p "[#{tag}] #{success_msg}"
     elsif response.timed_out?
       p "[#{tag}] timeout"
     elsif response.code == 0
@@ -68,21 +68,24 @@ class Jira
   # update command
   def update(key, &block)
     request_config = self._get_request_config('issue/' + key, :put)
-
+    raise Exception.new 'cannot start a new command inside another' unless self.request.nil?
     self.request = Request.new(request_config)
     self.instance_eval(&block)
     response = self.request_queue.add(self.request)
-    self._show_result(response, key)
+    self._show_result(response, key, 'update successful')
     self.request = nil
   end
 
   def create(summary, &block)
     request_config = self._get_request_config('issue', :post)
+    raise Exception.new 'cannot start a new command inside another' unless self.request.nil?
     self.request = Request.new(request_config)
     self.request.summary summary
+    self.request.project self.config[:project]
     self.instance_eval(&block)
     response = self.request_queue.add(self.request)
-    self._show_result(response, summary)
+    self._show_result(response, summary, 'created successfully')
+    p self.request.to_s
     self.request = nil
   end
 

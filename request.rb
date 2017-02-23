@@ -13,8 +13,8 @@ class Request
         description: 'fields/description',
         type: 'fields/issuetype/name',
         assignee: 'fields/assignee/name',
-        estimate: 'fields/timeTracking/originalEstimate',
-        remaining: 'fields/timeTracking/remainingEstimate'
+        estimate: 'fields/timetracking/originalEstimate',
+        remaining: 'fields/timetracking/remainingEstimate'
     }
     self.data = {}
   end
