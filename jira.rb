@@ -57,7 +57,6 @@ class Jira
   def _show_result(response, tag, success_msg)
     if response.success?
       p "[#{tag}] #{success_msg}"
-      p response.body
     elsif response.timed_out?
       p "[#{tag}] timeout"
     elsif response.code == 0

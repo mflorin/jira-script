@@ -2,11 +2,28 @@ require 'json'
 
 class Request
 
-  attr_accessor :config, :data, :fields, :data_map
+  # request config - host, api resource, etc
+  attr_accessor :config
+
+  # request data to send to server
+  attr_accessor :data
+
+  # request fields that were set
+  attr_accessor :fields
+
+  # mapping between our dsl keywords and jira's json fields
+  attr_accessor :data_map
+
+  # request parent - used when creating subtasks
+  attr_accessor :request_parent
+
+  # request response
+  attr_accessor :response
 
   def initialize(config = {})
     self.config = config
     self.fields = {}
+    self.request_parent = nil
     self.data_map = {
         project: 'fields/project/key',
         parent: 'fields/parent/key',
