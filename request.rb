@@ -50,12 +50,28 @@ class Request
         type: 'fields/issuetype/name',
         assignee: 'fields/assignee/name',
         estimate: 'fields/timetracking/originalEstimate',
-        remaining: 'fields/timetracking/remainingEstimate'
+        remaining: 'fields/timetracking/remainingEstimate',
+        components: 'fields/components',
+        labels: 'fields/labels'
     }
   end
 
   def to_json
     JSON.generate(json_data)
+  end
+
+  def to_s
+    json_data
+  end
+
+  def _set_default_type
+    # set default type if empty
+    return unless fields.key?(:type)
+    if fields.key?(:parent)
+      type config[:default_subtask_type]
+    else
+      type config[:default_type]
+    end
   end
 
   def _set_xpath(h, xpath, value)
@@ -71,17 +87,9 @@ class Request
     h
   end
 
-  def respond_to_missing?(method_name, include_private = false)
-    data_map.key?(method_name) || super
-  end
-
-  def method_missing(name, *args, &block)
-    if data_map.key?(name)
-      fields[name] = *args[0]
-      _set_xpath(json_data, data_map[name], *args[0])
-    else
-      super
-    end
+  def _set_field(name, val)
+    fields[name] = val
+    _set_xpath(json_data, data_map[name], val)
   end
 
   def _error(msg)
@@ -89,6 +97,18 @@ class Request
       raise "Error trying to create ticket #{fields[:summary]}: #{msg}"
     elsif request_type == :update
       raise "Error trying to update ticket #{key}: #{msg}"
+    end
+  end
+
+  def respond_to_missing?(method_name, include_private = false)
+    data_map.key?(method_name) || super
+  end
+
+  def method_missing(name, *args, &block)
+    if data_map.key?(name)
+      _set_field(name, *args[0])
+    else
+      super
     end
   end
 
@@ -131,6 +151,10 @@ class Request
     ret
   end
 
+  def create(summary, &block)
+    subtask(summary, &block)
+  end
+
   def subtask(summary, &block)
     raise "Sub-task #{fields[:summary]} cannot have other sub-tasks" unless request_parent.nil?
     request = Request.new(:create, config)
@@ -141,21 +165,11 @@ class Request
     request.instance_eval(&block) if block_given?
   end
 
-  def create(summary, &block)
-    subtask(summary, &block)
+  def components(*args)
+    _set_field(:components, [*args])
   end
 
-  def _set_default_type
-    # set default type if empty
-    return unless fields.key?(:type)
-    if fields.key?(:parent)
-      type config[:default_subtask_type]
-    else
-      type config[:default_type]
-    end
-  end
-
-  def to_s
-    json_data
+  def labels(*args)
+    _set_field(:labels, [*args])
   end
 end
