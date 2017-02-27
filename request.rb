@@ -1,6 +1,8 @@
 require 'json'
 require 'typhoeus'
 
+module Jira
+
 # Generic Jira request
 class Request
   # request config - host, api resource, etc
@@ -180,4 +182,6 @@ class Request
   def labels(*args)
     _set_field(:labels, [*args])
   end
+end
+
 end

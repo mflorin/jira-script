@@ -1,7 +1,9 @@
 require 'request'
 
+module Jira
+
 # Jira class wrapper that basically runs the script
-class Jira
+class Dispatcher
   attr_accessor :config, :request_queue
 
   def initialize
@@ -10,13 +12,6 @@ class Jira
         default_issue_type: 'Story',
         default_subtask_type: 'Technical task'
     }
-  end
-
-  def self.run(&block)
-    Jira.new.instance_eval(&block)
-  rescue StandardError => e
-    p "ERROR: #{e.message}"
-    puts e.backtrace
   end
 
   # config related methods
@@ -81,4 +76,13 @@ class Jira
 
     p "Issue #{k}: '#{summary}' created successfully"
   end
+end
+
+def self.run(&block)
+  Dispatcher.new.instance_eval(&block)
+rescue StandardError => e
+  p "ERROR: #{e.message}"
+  puts e.backtrace
+end
+
 end
