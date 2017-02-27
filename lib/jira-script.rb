@@ -1,4 +1,4 @@
-require 'request'
+require 'jira-script/request'
 
 module Jira
 

@@ -14,7 +14,7 @@ class Request
   # request fields that were set
   attr_accessor :fields
 
-  # mapping between our dsl keywords and jira's json fields
+  # mapping between our dsl keywords and Jira's json fields
   attr_accessor :data_map
 
   # request parent - used when creating subtasks
@@ -119,7 +119,6 @@ class Request
     ret = nil
     _set_default_type
     url = [config[:host], config[:api_path], config[:resource]].join('/')
-    p to_json
     req = Typhoeus::Request.new(
         url,
         ssl_verifypeer: false,
