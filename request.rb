@@ -66,11 +66,11 @@ class Request
 
   def _set_default_type
     # set default type if empty
-    return unless fields.key?(:type)
+    return if fields.key?(:type)
     if fields.key?(:parent)
       type config[:default_subtask_type]
     else
-      type config[:default_type]
+      type config[:default_issue_type]
     end
   end
 
@@ -88,6 +88,7 @@ class Request
   end
 
   def _set_field(name, val)
+    raise "Invalid request parameter #{name}" unless data_map.key?(name)
     fields[name] = val
     _set_xpath(json_data, data_map[name], val)
   end
@@ -106,7 +107,7 @@ class Request
 
   def method_missing(name, *args, &block)
     if data_map.key?(name)
-      _set_field(name, *args[0])
+      _set_field(name, args[0])
     else
       super
     end
@@ -116,6 +117,7 @@ class Request
     ret = nil
     _set_default_type
     url = [config[:host], config[:api_path], config[:resource]].join('/')
+    p to_json
     req = Typhoeus::Request.new(
         url,
         ssl_verifypeer: false,
@@ -162,11 +164,17 @@ class Request
     request.request_parent = self
     children.push request
     request.summary summary
+    request.project fields[:project]
     request.instance_eval(&block) if block_given?
   end
 
   def components(*args)
-    _set_field(:components, [*args])
+    vals = []
+    args.each do |arg|
+      vals.push name: arg
+    end
+
+    _set_field(:components, vals)
   end
 
   def labels(*args)

@@ -7,7 +7,7 @@ class Jira
   def initialize
     self.config = {
         api_path: 'rest/api/2',
-        default_type: 'Story',
+        default_issue_type: 'Story',
         default_subtask_type: 'Technical task'
     }
   end
@@ -16,6 +16,7 @@ class Jira
     Jira.new.instance_eval(&block)
   rescue StandardError => e
     p "ERROR: #{e.message}"
+    puts e.backtrace
   end
 
   # config related methods
@@ -49,7 +50,7 @@ class Jira
         project: config[:project],
         http_request_type: type,
         resource: res,
-        default_task_type: config[:default_task_type],
+        default_issue_type: config[:default_issue_type],
         default_subtask_type: config[:default_subtask_type]
     }
   end
@@ -78,6 +79,6 @@ class Jira
     # run request
     k = request.run
 
-    p "Issue #{k}: #{summary} created successfully"
+    p "Issue #{k}: '#{summary}' created successfully"
   end
 end
