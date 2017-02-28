@@ -190,6 +190,15 @@ end
 ```
 
 ### verbosity
+Can only be used in the `Jira.run` block.
+```ruby
+Jira.run do
+# ...
+  verbosity 2
+# ...
+end
+```
+
 Valid values are 
 - 0 - No output is performed.
 - 1 - Success messages are displayed for `create`, `update` and `subtask` commands
@@ -197,4 +206,12 @@ Valid values are
 
 
 ### quite
-This is an alias for `verbosity 0` 
+This is an alias for `verbosity 0`.
+ 
+```ruby
+Jira.run do
+# ...
+  quite true
+# ...
+end
+```
