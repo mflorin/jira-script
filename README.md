@@ -1,4 +1,7 @@
 # Jira Script
+[![Gem Version](https://img.shields.io/gem/v/jira-script.svg)][ruby-gems]
+
+[ruby-gems]: https://rubygems.org/gems/jira-script
 ## Introduction
 jira-script is a Ruby based DSL for automating the process of creating and updating
 many Jira issues at once.
