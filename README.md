@@ -1,7 +1,15 @@
 # Jira Script
 [![Gem Version](https://img.shields.io/gem/v/jira-script.svg)][ruby-gems]
+[![Code Climate](https://img.shields.io/codeclimate/github/mflorin/jira-script.svg)][codeclimate]
+[![Dependency Status](https://img.shields.io/gemnasium/mflorin/jira-script.svg)](gemnasium)
+[![Security](https://hakiri.io/github/mflorin/jira-script/master.svg)][hakiri]
+
 
 [ruby-gems]: https://rubygems.org/gems/jira-script
+[codeclimate]: https://codeclimate.com/github/mflorin/jira-script
+[gemnasium]: https://gemnasium.com/github.com/mflorin/jira-script
+[hakiri]: https://hakiri.io/github/mflorin/jira-script/master
+
 ## Introduction
 jira-script is a Ruby based DSL for automating the process of creating and updating
 many Jira issues at once.
