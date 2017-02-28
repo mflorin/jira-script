@@ -1,5 +1,6 @@
 require 'json'
 require 'typhoeus'
+require 'jira-script/request_exception'
 
 module Jira
 
@@ -90,16 +91,16 @@ class Request
   end
 
   def _set_field(name, val)
-    raise "Invalid request parameter #{name}" unless data_map.key?(name)
+    raise RequestException, "Invalid request parameter #{name}" unless data_map.key?(name)
     fields[name] = val
     _set_xpath(json_data, data_map[name], val)
   end
 
   def _error(msg)
     if request_type == :create
-      raise "Error trying to create ticket #{fields[:summary]}: #{msg}"
+      raise RequestException, "Error trying to create ticket #{fields[:summary]}: #{msg}"
     elsif request_type == :update
-      raise "Error trying to update ticket #{key}: #{msg}"
+      raise RequestException, "Error trying to update ticket #{key}: #{msg}"
     end
   end
 
@@ -119,12 +120,15 @@ class Request
     ret = nil
     _set_default_type
     url = [config[:host], config[:api_path], config[:resource]].join('/')
+    json_str = to_json
+    p "Sending json #{json_str}" if config[:verbosity] >= 2
+
     req = Typhoeus::Request.new(
         url,
         ssl_verifypeer: false,
         method: config[:http_request_type],
         userpwd: "#{config[:user]}:#{config[:password]}",
-        body: to_json,
+        body: json_str,
         headers: { 'Content-Type' => 'application/json' }
     )
     req.on_complete do |response|
@@ -132,6 +136,17 @@ class Request
         self.response = JSON.parse(response.body, symbolize_names: true)
         ret = self.response[:key]
         self.key = ret if request_type == :create
+
+        if config[:verbosity] >= 1
+          if fields[:parent].nil?
+            prefix = 'Issue'
+          else
+            prefix = '  - sub-task'
+          end
+          p "#{prefix} #{key} updated successfully" if request_type == :update
+          p "#{prefix} #{key}: '#{fields[:summary]}' created successfully" if request_type == :create
+        end
+
         unless children.empty?
           children.each do |child|
             child.parent key
@@ -159,7 +174,7 @@ class Request
   end
 
   def subtask(summary, &block)
-    raise "Sub-task #{fields[:summary]} cannot have other sub-tasks" unless request_parent.nil?
+    raise RequestException, "Sub-task '#{fields[:summary]}' cannot have other sub-tasks" unless request_parent.nil?
     request = Request.new(:create, config)
     request.config[:http_request_type] = :post
     request.request_parent = self

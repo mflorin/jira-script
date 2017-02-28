@@ -1,4 +1,5 @@
 require 'jira-script/request'
+require 'jira-script/request_exception'
 
 module Jira
 
@@ -10,7 +11,8 @@ class Dispatcher
     self.config = {
         api_path: 'rest/api/2',
         default_issue_type: 'Story',
-        default_subtask_type: 'Technical task'
+        default_subtask_type: 'Technical task',
+        verbosity: 1
     }
   end
 
@@ -35,6 +37,14 @@ class Dispatcher
     config[:project] = p
   end
 
+  def quite(on)
+    self.config[:verbosity] = 0 if on
+  end
+
+  def verbosity(v)
+    self.config[:verbosity] = v
+  end
+
   # build request config
   def _get_request_config(res, type)
     {
@@ -46,20 +56,19 @@ class Dispatcher
         http_request_type: type,
         resource: res,
         default_issue_type: config[:default_issue_type],
-        default_subtask_type: config[:default_subtask_type]
+        default_subtask_type: config[:default_subtask_type],
+        verbosity: config[:verbosity]
     }
   end
 
   # update command
   def update(key, &block)
-    raise "No update definition for issue #{key}" unless block_given?
+    raise RequestException, "No update definition provided for issue #{key}" unless block_given?
     request_config = _get_request_config('issue/' + key, :put)
     request = Request.new(:update, request_config)
     request.key = key
     request.instance_eval(&block)
     request.run
-
-    p "Issue #{key} updated successfully"
   end
 
   def create(summary, &block)
@@ -72,15 +81,13 @@ class Dispatcher
     request.instance_eval(&block) if block_given?
 
     # run request
-    k = request.run
-
-    p "Issue #{k}: '#{summary}' created successfully"
+    request.run
   end
 end
 
 def self.run(&block)
   Dispatcher.new.instance_eval(&block)
-rescue StandardError => e
+rescue RequestException => e
   p "ERROR: #{e.message}"
   puts e.backtrace
 end
